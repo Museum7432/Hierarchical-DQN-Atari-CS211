@@ -1,0 +1,9 @@
+gymnasium[accept-rom-license, atari]
+torch
+torchvision
+torchaudio
+matplotlib
+stable-baselines3
+numpy==1.26.4
+tensorboard
+lightning
