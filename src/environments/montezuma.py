@@ -8,6 +8,13 @@ from .utils import load_img_np, match_tp, rgb_to_grayscale
 from stable_baselines3.common.atari_wrappers import EpisodicLifeEnv
 from collections import deque
 import cv2
+from stable_baselines3.common.atari_wrappers import (
+    ClipRewardEnv,
+    EpisodicLifeEnv,
+    FireResetEnv,
+    MaxAndSkipEnv,
+    NoopResetEnv,
+)
 
 
 class SkipEnv(gym.Wrapper[np.ndarray, int, np.ndarray, int]):
@@ -80,8 +87,8 @@ class MontezumaObjectDetectionWrapper(gym.Wrapper):
 
         self.hit_box = {
             "char": (6, 6),  # 10 in row and columns
-            "key": (8, 4),
-            "ladder": (8, 4),
+            "key": (12, 4),
+            "ladder": (12, 4),
             "door": (17, 10),
         }
 
@@ -193,6 +200,8 @@ class MontezumaIntrinsicRewardWrapper(gym.Wrapper):
 
         self.max_objs = {"char": 1, "key": 1, "ladder": 3, "door": 2}
 
+        self.last_distances = None
+
     def _set_intrinsic_reward(self, info):
         # give reward of 1 if the character touch the goal
         # or the goal disappear
@@ -201,27 +210,39 @@ class MontezumaIntrinsicRewardWrapper(gym.Wrapper):
         intrinsic_rewards = []
         dones = []
 
+        # calculate reward base on distance
+
+        curr_distances = []
+
         for obj_pos, avail, (mdx, mdy) in info["goal_list"]:
-            # dist = calc_dist1(info["char_pos"], obj_pos)
+
+            dist = calc_dist(info["char_pos"], obj_pos)
+
+            curr_distances.append(dist)
 
             dx, dy = calc_dist2(info["char_pos"], obj_pos)
 
             done = False
-            reward = 0
+            reward = -0.1
+            # reward = - dist/20000
             if dx <= mdx + 1 and dy <= mdy + 1:
                 done = True
                 # more reward for being closer
-                reward = 1
+                reward += 50
                 # reward = 1 / (1 + dist)
 
             if not avail:
                 done = True
-                reward = 1
-
-            # reward = dist
+                reward += 50
 
             intrinsic_rewards.append(reward)
             dones.append(done)
+
+        if self.last_distances is not None:
+            for idx, ld in enumerate(self.last_distances):
+                intrinsic_rewards[idx] += ld - curr_distances[idx]
+
+        self.last_distances = curr_distances
 
         info["intrinsic_rewards"] = intrinsic_rewards
         info["intrinsic_dones"] = dones
@@ -234,13 +255,17 @@ class MontezumaIntrinsicRewardWrapper(gym.Wrapper):
         info = self._set_intrinsic_reward(info)
 
         if terminated and reward == 0:
-            info["intrinsic_rewards"] = [0 for _ in info["intrinsic_rewards"]]
+            info["intrinsic_rewards"] = [r - 200 for r in info["intrinsic_rewards"]]
             info["intrinsic_dones"] = [True for _ in info["intrinsic_dones"]]
 
+        # penalize for just standing
+        # needed
         return obs, reward, terminated, truncated, info
 
     def reset(self, seed=None):
         obs, info = self.env.reset(seed=seed)
+
+        self.last_distances = None
 
         info = self._set_intrinsic_reward(info)
 
@@ -322,9 +347,14 @@ def CreateMontezumaRevengeEnv(track_obj=False, record_vid_path=None):
         env = gym.wrappers.RecordVideo(env, record_vid_path)
 
     env = gym.wrappers.RecordEpisodeStatistics(env)
+
+    # env = NoopResetEnv(env, noop_max=30)
+
     # env = SkipEnv(env, skip=4)
 
     env = EpisodicLifeEnv(env)
+
+    # env = ClipRewardEnv(env)
 
     env = gym.wrappers.GrayscaleObservation(env)
     env = gym.wrappers.FrameStackObservation(env, 4)

@@ -24,6 +24,8 @@ from stable_baselines3.common.atari_wrappers import (
 
 if __name__ == "__main__":
     env = CreateMontezumaRevengeEnv(track_obj=True, record_vid_path="logs/vids")
+    # env = CreateMontezumaRevengeEnv(track_obj=True)
 
     # train_Hdqn(env, learning_starts=20000, learning_rate=2e-5, exploration_fraction=0.1)
-    train_dqn(env, learning_starts=20000, learning_rate=2e-5, exploration_fraction=0.1)
+    train_Hdqn(env)
+    # train_dqn(env)
