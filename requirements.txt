@@ -7,3 +7,5 @@ stable-baselines3
 numpy==1.26.4
 tensorboard
 lightning
+opencv-python
+moviepy

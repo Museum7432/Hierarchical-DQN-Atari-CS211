@@ -26,6 +26,7 @@ def epsilon_greedy_action(agent, epsilon, obs, ACTION_SPACE):
     if random.random() < epsilon:
         action = ACTION_SPACE.sample()
     else:
+        obs = np.array(obs)
         action = (
             agent.get_greedy_action(torch.tensor(obs[None, :], device=agent.device))
             .cpu()
@@ -47,7 +48,7 @@ def train_dqn(
     target_network_frequency: int = 128,
     # exploration
     start_e: float = 1,
-    end_e: float = 0.01,
+    end_e: float = 0.1,
     exploration_fraction: float = 0.10,
     gamma=0.99,
     tau=0.1,
@@ -90,10 +91,10 @@ def train_dqn(
         next_obs, reward, done, truncation, info = env.step(action)
 
         # ############
-        goal_reached = info["intrinsic_dones"][4]
-        intrinsic_reward = info["intrinsic_rewards"][4]
-        reward = max(intrinsic_reward, reward)
-        done = goal_reached or done
+        # goal_reached = info["intrinsic_dones"][4]
+        # intrinsic_reward = info["intrinsic_rewards"][4]
+        # reward = max(intrinsic_reward, reward)
+        # done = goal_reached or done
         # ############
 
         global_step += 1
@@ -189,14 +190,13 @@ def train_Hdqn(
     # for cotnroller
     learning_starts: int = 50000,
     replay_buffer_size: int = 600000,
-    learning_rate: float = 2.5e-4,
+    learning_rate: float = 2e-4,
     # for meta cotnroller
     learning_starts_meta: int = 1000,
-    learning_rate_meta: float = 5e-4,
-    max_step_per_goal: int = 500,
+    max_step_per_goal: int = 1500,
     #
     train_frequency=8,
-    target_network_frequency: int = 16,
+    target_network_frequency: int = 8,
     # exploration
     start_e: float = 1,
     end_e: float = 0.1,
@@ -322,6 +322,10 @@ def train_Hdqn(
             goal_reached = info["intrinsic_dones"][goal]
             intrinsic_reward = info["intrinsic_rewards"][goal]
 
+            if goal_step == max_step_per_goal:
+                # not reaching the goal in time is still counted as failing.
+                intrinsic_reward -= 200
+
             F += extrinsic_reward
             total_intrinsic_reward += intrinsic_reward
             intrinsic_reward_per_goal[goal] += intrinsic_reward
@@ -383,7 +387,7 @@ def train_Hdqn(
         fabric.log("rewards/extrinsic", F, global_step)
         fabric.log("epsilon/meta", epsilon, global_step)
         fabric.log("epsilon/ctrl", epsilon_ctrl, global_step)
-        
+
         fabric.log("goals/step_per_goal", goal_step, global_step)
 
         if done or truncation:
@@ -391,8 +395,3 @@ def train_Hdqn(
 
             fabric.log("goals/n_goals_in_ep", n_goals_in_ep, global_step)
             n_goals_in_ep = 0
-        
-
-        
-
-    

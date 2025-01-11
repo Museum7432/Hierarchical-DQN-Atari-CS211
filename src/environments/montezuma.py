@@ -356,8 +356,8 @@ def CreateMontezumaRevengeEnv(track_obj=False, record_vid_path=None):
 
     # env = ClipRewardEnv(env)
 
-    env = gym.wrappers.GrayscaleObservation(env)
-    env = gym.wrappers.FrameStackObservation(env, 4)
+    env = gym.wrappers.GrayScaleObservation(env)
+    env = gym.wrappers.FrameStack(env, 4)
 
     if track_obj:
         env = MontezumaObjectDetectionWrapper(env)
