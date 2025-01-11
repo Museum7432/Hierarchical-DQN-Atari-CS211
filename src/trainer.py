@@ -38,20 +38,20 @@ def epsilon_greedy_action(agent, epsilon, obs, ACTION_SPACE):
 def train_dqn(
     # agent:DQN_Agent,
     env,
-    learning_rate: float = 1e-4,
-    batch_size: int = 64,
+    learning_rate: float = 2e-4,
+    batch_size: int = 256,
     total_timesteps: int = 10000000,
     learning_starts: int = 80000,
-    train_frequency=64,
+    train_frequency=8,
     # for replay buffer
-    replay_buffer_size: int = 600000,
-    target_network_frequency: int = 128,
+    replay_buffer_size: int = 800000,
+    target_network_frequency: int = 16,
     # exploration
     start_e: float = 1,
-    end_e: float = 0.1,
-    exploration_fraction: float = 0.10,
-    gamma=0.99,
-    tau=0.1,
+    end_e: float = 0.01,
+    exploration_fraction: float = 0.2,
+    gamma=0.999,
+    tau=0.01,
 ):
     logger = TensorBoardLogger(root_dir=os.path.join("logs"))
 
@@ -189,20 +189,20 @@ def train_Hdqn(
     total_timesteps: int = 10000000,
     # for cotnroller
     learning_starts: int = 50000,
-    replay_buffer_size: int = 600000,
+    replay_buffer_size: int = 800000,
     learning_rate: float = 2e-4,
     # for meta cotnroller
     learning_starts_meta: int = 1000,
     max_step_per_goal: int = 1500,
     #
     train_frequency=8,
-    target_network_frequency: int = 8,
+    target_network_frequency: int = 16,
     # exploration
     start_e: float = 1,
-    end_e: float = 0.1,
-    exploration_fraction: float = 0.10,
-    gamma=0.99,
-    tau=1e-3,
+    end_e: float = 0.01,
+    exploration_fraction: float = 0.20,
+    gamma=0.999,
+    tau=0.01,
 ):
     logger = TensorBoardLogger(root_dir=os.path.join("logs"))
 
@@ -322,9 +322,9 @@ def train_Hdqn(
             goal_reached = info["intrinsic_dones"][goal]
             intrinsic_reward = info["intrinsic_rewards"][goal]
 
-            if goal_step == max_step_per_goal:
-                # not reaching the goal in time is still counted as failing.
-                intrinsic_reward -= 200
+            # if goal_step == max_step_per_goal:
+            #     # not reaching the goal in time is still counted as failing.
+            #     intrinsic_reward -= 200
 
             F += extrinsic_reward
             total_intrinsic_reward += intrinsic_reward

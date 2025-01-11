@@ -223,7 +223,7 @@ class MontezumaIntrinsicRewardWrapper(gym.Wrapper):
             dx, dy = calc_dist2(info["char_pos"], obj_pos)
 
             done = False
-            reward = -0.1
+            reward = -0.2
             # reward = - dist/20000
             if dx <= mdx + 1 and dy <= mdy + 1:
                 done = True
